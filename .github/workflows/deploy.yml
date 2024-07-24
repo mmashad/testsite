@@ -1,0 +1,28 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # Adjust the branch as needed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install lftp
+      run: sudo apt-get install lftp
+
+    - name: Deploy to Server
+      env:
+        FTP_SERVER: gold.server24.arhamsoft.dev
+        FTP_USERNAME: ${{ secrets.CPANEL_USERNAME }}
+        FTP_PASSWORD: ${{ secrets.CPANEL_PASSWORD }}
+      run: |
+        lftp -c "
+        open ftp://$FTP_USERNAME:$FTP_PASSWORD@$FTP_SERVER;
+        lcd .
+        mirror --reverse --delete --verbose ./ /public_html/"
