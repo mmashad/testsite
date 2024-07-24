@@ -1,4 +1,4 @@
-name: Deploy to Server
+name: Deploy to cPanel
 
 on:
   push:
@@ -13,16 +13,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install lftp
-      run: sudo apt-get install lftp
-
-    - name: Deploy to Server
+    - name: Deploy to cPanel
       env:
-        FTP_SERVER: gold.server24.arhamsoft.dev
-        FTP_USERNAME: ${{ secrets.CPANEL_USERNAME }}
-        FTP_PASSWORD: ${{ secrets.CPANEL_PASSWORD }}
+        CPANEL_URL: ${{ secrets.CPANEL_URL }}
+        CPANEL_USERNAME: ${{ secrets.CPANEL_USERNAME }}
+        CPANEL_PASSWORD: ${{ secrets.CPANEL_PASSWORD }}
       run: |
-        lftp -c "
-        open ftp://$FTP_USERNAME:$FTP_PASSWORD@$FTP_SERVER;
-        lcd .
-        mirror --reverse --delete --verbose ./ /public_html/"
+        # Compress the files to upload
+        zip -r website.zip .
+
+        # Upload to cPanel
+        curl --insecure -u $CPANEL_USERNAME:$CPANEL_PASSWORD \
+          --form "file=@website.zip" \
+          "$CPANEL_URL/api/upload?dir=public_html"
+
+        # Optionally, you can add a step to unzip the uploaded file using a cPanel UAPI call
+
